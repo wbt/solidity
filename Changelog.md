@@ -2,6 +2,7 @@
 
 Features:
  * Allow constant variables to be used as array length
+ * Standard JSON: Support the ``outputSelection`` field for selective compilation of target artifacts.
  * Syntax Checker: Turn the usage of ``callcode`` into an error as experimental 0.5.0 feature.
  * Type Checker: Improve address checksum warning.
  * Type Checker: More detailed errors for invalid array lengths (such as division by zero).
