@@ -377,11 +377,15 @@ As an example, the code
 
 ::
 
-  contract Test {
-    struct S { uint a; uint[] b; T[] c; }
-    struct T { uint x; uint y; }
-    function f(S s, T t, uint a) { }
-  }
+    pragma solidity ^0.4.19;
+    pragma experimental ABIEncoderV2;
+
+    contract Test {
+      struct S { uint a; uint[] b; T[] c; }
+      struct T { uint x; uint y; }
+      function f(S s, T t, uint a) { }
+      function g() returns (S s) {}
+    }
 
 would result in the JSON:
 
