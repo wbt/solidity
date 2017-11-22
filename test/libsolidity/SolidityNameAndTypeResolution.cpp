@@ -2107,7 +2107,7 @@ BOOST_AUTO_TEST_CASE(array_with_nonconstant_length)
 			function f(uint a) public { uint8[a] x; }
 		}
 	)";
-	CHECK_ERROR(text, TypeError, "Identifier must be declared constant.");
+	CHECK_ERROR(text, TypeError, "Invalid array length, expected integer literal or constant expression.");
 }
 
 BOOST_AUTO_TEST_CASE(array_with_negative_length)
@@ -4395,7 +4395,7 @@ BOOST_AUTO_TEST_CASE(invalid_array_declaration_with_signed_fixed_type)
 			}
 		}
 	)";
-	CHECK_ERROR(text, TypeError, "Invalid array length, expected integer literal.");
+	CHECK_ERROR(text, TypeError, "Invalid array length, expected integer literal or constant expression.");
 }
 
 BOOST_AUTO_TEST_CASE(invalid_array_declaration_with_unsigned_fixed_type)
@@ -4407,7 +4407,7 @@ BOOST_AUTO_TEST_CASE(invalid_array_declaration_with_unsigned_fixed_type)
 			}
 		}
 	)";
-	CHECK_ERROR(text, TypeError, "Invalid array length, expected integer literal.");
+	CHECK_ERROR(text, TypeError, "Invalid array length, expected integer literal or constant expression.");
 }
 
 BOOST_AUTO_TEST_CASE(rational_to_bytes_implicit_conversion)
@@ -7250,7 +7250,7 @@ BOOST_AUTO_TEST_CASE(array_length_too_large)
 			uint[8**90] ids;
 		}
 	)";
-	CHECK_ERROR(text, TypeError, "Invalid array length, expected integer literal.");
+	CHECK_ERROR(text, TypeError, "Invalid array length, expected integer literal or constant expression.");
 }
 
 BOOST_AUTO_TEST_CASE(array_length_not_convertible_to_integer)
@@ -7260,7 +7260,7 @@ BOOST_AUTO_TEST_CASE(array_length_not_convertible_to_integer)
 			uint[true] ids;
 		}
 	)";
-	CHECK_ERROR(text, TypeError, "Invalid array length, expected integer literal.");
+	CHECK_ERROR(text, TypeError, "Invalid array length, expected integer literal or constant expression.");
 }
 
 BOOST_AUTO_TEST_CASE(array_length_constant_var)
@@ -7282,7 +7282,7 @@ BOOST_AUTO_TEST_CASE(array_length_non_integer_constant_var)
 			uint[LEN] ids;
 		}
 	)";
-	CHECK_ERROR(text, TypeError, "Invalid array length, expected integer literal.");
+	CHECK_ERROR(text, TypeError, "Invalid array length, expected integer literal or constant expression.");
 }
 
 BOOST_AUTO_TEST_CASE(array_length_cannot_be_function)
@@ -7293,7 +7293,7 @@ BOOST_AUTO_TEST_CASE(array_length_cannot_be_function)
 			uint[f] ids;
 		}
 	)";
-	CHECK_ERROR(text, TypeError, "Invalid array length, expected integer literal.");
+	CHECK_ERROR(text, TypeError, "Invalid array length, expected integer literal or constant expression.");
 }
 
 BOOST_AUTO_TEST_CASE(array_length_can_be_recursive_constant)
@@ -7317,7 +7317,7 @@ BOOST_AUTO_TEST_CASE(array_length_cannot_be_function_call)
 			uint[LEN] ids;
 		}
 	)";
-	CHECK_ERROR(text, TypeError, "Invalid array length, expected integer literal.");
+	CHECK_ERROR(text, TypeError, "Invalid array length, expected integer literal or constant expression.");
 }
 
 BOOST_AUTO_TEST_CASE(array_length_const_cannot_be_fractional)
@@ -7366,7 +7366,7 @@ BOOST_AUTO_TEST_CASE(array_length_cannot_be_constant_function_parameter)
 			}
 		}
 	)";
-	CHECK_ERROR(text, TypeError, "Constant identifier declaration must have a constant value.");
+	CHECK_ERROR(text, TypeError, "Invalid array length, expected integer literal or constant expression.");
 }
 
 BOOST_AUTO_TEST_CASE(array_length_with_cyclic_constant)
@@ -7405,7 +7405,7 @@ BOOST_AUTO_TEST_CASE(array_length_with_pure_functions)
 			uint[LEN] ids;
 		}
 	)";
-	CHECK_ERROR(text, TypeError, "Invalid array length, expected integer literal.");
+	CHECK_ERROR(text, TypeError, "Invalid array length, expected integer literal or constant expression.");
 }
 
 BOOST_AUTO_TEST_CASE(array_length_invalid_expression)
@@ -7415,25 +7415,25 @@ BOOST_AUTO_TEST_CASE(array_length_invalid_expression)
 			uint[-true] ids;
 		}
 	)";
-	CHECK_ERROR(text, TypeError, "Invalid constant expression.");
+	CHECK_ERROR(text, TypeError, "Invalid array length, expected integer literal or constant expression.");
 	text = R"(
 		contract C {
 			uint[true/1] ids;
 		}
 	)";
-	CHECK_ERROR(text, TypeError, "Invalid constant expression.");
+	CHECK_ERROR(text, TypeError, "Invalid array length, expected integer literal or constant expression.");
 	text = R"(
 		contract C {
 			uint[1/true] ids;
 		}
 	)";
-	CHECK_ERROR(text, TypeError, "Invalid constant expression.");
+	CHECK_ERROR(text, TypeError, "Invalid array length, expected integer literal or constant expression.");
 	text = R"(
 		contract C {
 			uint[1.111111E1111111111111] ids;
 		}
 	)";
-	CHECK_ERROR(text, TypeError, "Invalid literal value.");
+	CHECK_ERROR(text, TypeError, "Invalid array length, expected integer literal or constant expression.");
 	text = R"(
 		contract C {
 			uint[3/0] ids;
