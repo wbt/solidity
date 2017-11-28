@@ -40,13 +40,6 @@ namespace julia
 class ASTCopier: public boost::static_visitor<Statement>
 {
 public:
-	ASTCopier(Block const& _block):
-		m_block(_block)
-	{}
-
-	std::shared_ptr<Block> run();
-
-public:
 	Statement operator()(Literal const& _literal);
 	Statement operator()(Instruction const& _instruction);
 	Statement operator()(Identifier const& _identifier);
@@ -78,13 +71,11 @@ protected:
 	Literal translate(Literal const& _literal);
 	TypedName translate(TypedName const& _typedName);
 
-	virtual void enterScope(Block const& _block) = 0;
-	virtual void leaveScope(Block const& _block) = 0;
-	virtual void enterFunction(FunctionDefinition const& _function) = 0;
-	virtual void leaveFunction(FunctionDefinition const& _function) = 0;
+	virtual void enterScope(Block const&) { }
+	virtual void leaveScope(Block const&) { }
+	virtual void enterFunction(FunctionDefinition const&) { }
+	virtual void leaveFunction(FunctionDefinition const&) { }
 	virtual std::string translateIdentifier(std::string const& _name) { return _name; }
-
-	Block const& m_block;
 };
 
 template <typename T>

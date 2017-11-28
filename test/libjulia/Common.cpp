@@ -75,11 +75,10 @@ pair<shared_ptr<Block>, shared_ptr<AsmAnalysisInfo>> dev::julia::test::parse(str
 	return {};
 }
 
-shared_ptr<assembly::Block> dev::julia::test::disambiguate(string const& _source, bool _julia)
+assembly::Block dev::julia::test::disambiguate(string const& _source, bool _julia)
 {
 	auto result = parse(_source, _julia);
-	Disambiguator disambiguator(*result.first, *result.second);
-	return disambiguator.run();
+	return boost::get<Block>(Disambiguator(*result.second)(*result.first));
 }
 
 string dev::julia::test::format(string const& _source, bool _julia)

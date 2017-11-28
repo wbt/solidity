@@ -33,11 +33,6 @@ using namespace dev::julia;
 using namespace dev::solidity;
 using namespace dev::solidity::assembly;
 
-shared_ptr<Block> ASTCopier::run()
-{
-	return make_shared<Block>(translate(m_block));
-}
-
 Statement ASTCopier::operator ()(assembly::Instruction const& _instruction)
 {
 	return _instruction;

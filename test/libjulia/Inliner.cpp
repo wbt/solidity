@@ -41,10 +41,10 @@ namespace
 {
 string inlinableFunctions(string const& _source)
 {
-	auto ast = disambiguate(_source);
+	Block ast = disambiguate(_source);
 
 	InlinableFunctionFilter filter;
-	filter(*ast);
+	filter(ast);
 
 	return boost::algorithm::join(
 		filter.inlinableFunctions() | boost::adaptors::map_keys,
@@ -54,9 +54,9 @@ string inlinableFunctions(string const& _source)
 
 string inlineFunctions(string const& _source, bool _julia = true)
 {
-	auto ast = disambiguate(_source, _julia);
-	FunctionalInliner(*ast).run();
-	return AsmPrinter(_julia)(*ast);
+	Block ast = disambiguate(_source, _julia);
+	FunctionalInliner(ast).run();
+	return AsmPrinter(_julia)(ast);
 }
 }
 
