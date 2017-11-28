@@ -31,176 +31,10 @@ using namespace dev::julia;
 using namespace dev::solidity;
 using namespace dev::solidity::assembly;
 
-class Disambiguator::TemporaryScope
-{
-public:
-	TemporaryScope(Disambiguator& _disambiguator, Scope* _newScope):
-		m_disambiguator(_disambiguator),
-		m_originalScope(_disambiguator.m_scope)
-	{
-		m_disambiguator.m_scope = _newScope;
-	}
-	~TemporaryScope()
-	{
-		m_disambiguator.m_scope = m_originalScope;
-	}
-
-private:
-	Disambiguator& m_disambiguator;
-	Scope* m_originalScope = nullptr;
-
-};
-
-shared_ptr<Block> Disambiguator::run()
-{
-	return make_shared<Block>(translate(m_block));
-}
-
-Statement Disambiguator::operator ()(Instruction const& _instruction)
-{
-	return _instruction;
-}
-
-Statement Disambiguator::operator()(VariableDeclaration const& _varDecl)
-{
-	return VariableDeclaration{
-		_varDecl.location,
-		translateVector(_varDecl.variables),
-		translate(_varDecl.value)
-	};
-}
-
-Statement Disambiguator::operator()(Assignment const& _assignment)
-{
-	return Assignment{
-		_assignment.location,
-		translateVector(_assignment.variableNames),
-		translate(_assignment.value)
-	};
-}
-
-Statement Disambiguator::operator()(StackAssignment const&)
-{
-	solAssert(false, "Invalid operation.");
-	return {};
-}
-
-Statement Disambiguator::operator()(Label const&)
-{
-	solAssert(false, "Invalid operation.");
-	return {};
-}
-
-Statement Disambiguator::operator()(FunctionCall const& _call)
-{
-	return FunctionCall{
-		_call.location,
-		translate(_call.functionName),
-		translateVector(_call.arguments)
-	};
-}
-
-Statement Disambiguator::operator()(FunctionalInstruction const& _instruction)
-{
-	return FunctionalInstruction{
-		_instruction.location,
-		_instruction.instruction,
-		translateVector(_instruction.arguments)
-	};
-}
-
-Statement Disambiguator::operator()(Identifier const& _identifier)
-{
-	return Identifier{_identifier.location, translateIdentifier(_identifier.name)};
-}
-
-Statement Disambiguator::operator()(Literal const& _literal)
-{
-	return translate(_literal);
-}
-
-Statement Disambiguator::operator()(If const& _if)
-{
-	return If{_if.location, translate(_if.condition), translate(_if.body)};
-}
-
-Statement Disambiguator::operator()(Switch const& _switch)
-{
-	return Switch{_switch.location, translate(_switch.expression), translateVector(_switch.cases)};
-}
-
-Statement Disambiguator::operator()(FunctionDefinition const& _function)
-{
-	string translatedName = translateIdentifier(_function.name);
-
-	solAssert(m_scope, "");
-	solAssert(m_scope->identifiers.count(_function.name), "");
-
-	TemporaryScope s(*this, m_info.scopes.at(m_info.virtualBlocks.at(&_function).get()).get());
-
-	return FunctionDefinition{
-		_function.location,
-		move(translatedName),
-		translateVector(_function.arguments),
-		translateVector(_function.returns),
-		translate(_function.body)
-	};
-}
-
-Statement Disambiguator::operator()(ForLoop const& _forLoop)
-{
-	TemporaryScope s(*this, m_info.scopes.at(&_forLoop.pre).get());
-
-	return ForLoop{
-		_forLoop.location,
-		translate(_forLoop.pre),
-		translate(_forLoop.condition),
-		translate(_forLoop.post),
-		translate(_forLoop.body)
-	};
-}
-
-Statement Disambiguator::operator ()(Block const& _block)
-{
-	return translate(_block);
-}
-
-Statement Disambiguator::translate(Statement const& _statement)
-{
-	return boost::apply_visitor(*this, _statement);
-}
-
-Block Disambiguator::translate(Block const& _block)
-{
-	TemporaryScope s(*this, m_info.scopes.at(&_block).get());
-
-	return Block{_block.location, translateVector(_block.statements)};
-}
-
-Case Disambiguator::translate(Case const& _case)
-{
-	return Case{_case.location, translate(_case.value), translate(_case.body)};
-}
-
-Identifier Disambiguator::translate(Identifier const& _identifier)
-{
-	return Identifier{_identifier.location, translateIdentifier(_identifier.name)};
-}
-
-Literal Disambiguator::translate(Literal const& _literal)
-{
-	return _literal;
-}
-
-TypedName Disambiguator::translate(TypedName const& _typedName)
-{
-	return TypedName{_typedName.location, translateIdentifier(_typedName.name), _typedName.type};
-}
-
 string Disambiguator::translateIdentifier(string const& _originalName)
 {
-	solAssert(m_scope, "");
-	Scope::Identifier const* id = m_scope->lookup(_originalName);
+	solAssert(!m_scopes.empty() && m_scopes.back(), "");
+	Scope::Identifier const* id = m_scopes.back()->lookup(_originalName);
 	solAssert(id, "");
 	if (!m_translations.count(id))
 	{
@@ -215,5 +49,36 @@ string Disambiguator::translateIdentifier(string const& _originalName)
 		m_translations[id] = translated;
 	}
 	return m_translations.at(id);
+}
 
+void Disambiguator::enterScope(Block const& _block)
+{
+	enterScopeInternal(*m_info.scopes.at(&_block));
+}
+
+void Disambiguator::leaveScope(Block const& _block)
+{
+	leaveScopeInternal(*m_info.scopes.at(&_block));
+}
+
+void Disambiguator::enterFunction(FunctionDefinition const& _function)
+{
+	enterScopeInternal(*m_info.scopes.at(m_info.virtualBlocks.at(&_function).get()));
+}
+
+void Disambiguator::leaveFunction(FunctionDefinition const& _function)
+{
+	leaveScopeInternal(*m_info.scopes.at(m_info.virtualBlocks.at(&_function).get()));
+}
+
+void Disambiguator::enterScopeInternal(Scope& _scope)
+{
+	m_scopes.push_back(&_scope);
+}
+
+void Disambiguator::leaveScopeInternal(Scope& _scope)
+{
+	solAssert(!m_scopes.empty(), "");
+	solAssert(m_scopes.back() == &_scope, "");
+	m_scopes.pop_back();
 }

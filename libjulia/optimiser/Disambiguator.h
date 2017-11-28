@@ -22,6 +22,8 @@
 
 #include <libjulia/Aliases.h>
 
+#include <libjulia/optimiser/ASTCopier.h>
+
 #include <libsolidity/inlineasm/AsmAnalysisInfo.h>
 
 #include <boost/variant.hpp>
@@ -38,67 +40,31 @@ class EVMAssembly;
 /**
  * Creates a copy of a iulia AST replacing all identifiers by unique names.
  */
-class Disambiguator: public boost::static_visitor<Statement>
+class Disambiguator: public ASTCopier
 {
 public:
 	Disambiguator(
-		solidity::assembly::Block const& _block,
+		Block const& _block,
 		solidity::assembly::AsmAnalysisInfo const& _analysisInfo
-	):
-		m_block(_block), m_info(_analysisInfo)
+	): ASTCopier(_block), m_info(_analysisInfo)
 	{}
 
-	std::shared_ptr<solidity::assembly::Block> run();
+protected:
+	virtual void enterScope(Block const& _block) override;
+	virtual void leaveScope(Block const& _block) override;
+	virtual void enterFunction(FunctionDefinition const& _function) override;
+	virtual void leaveFunction(FunctionDefinition const& _function) override;
+	virtual std::string translateIdentifier(std::string const& _name) override;
 
-public:
-	Statement operator()(Literal const& _literal);
-	Statement operator()(Instruction const& _instruction);
-	Statement operator()(Identifier const& _identifier);
-	Statement operator()(FunctionalInstruction const& _instr);
-	Statement operator()(FunctionCall const&);
-	Statement operator()(Label const& _label);
-	Statement operator()(StackAssignment const& _assignment);
-	Statement operator()(Assignment const& _assignment);
-	Statement operator()(VariableDeclaration const& _varDecl);
-	Statement operator()(If const& _if);
-	Statement operator()(Switch const& _switch);
-	Statement operator()(FunctionDefinition const&);
-	Statement operator()(ForLoop const&);
-	Statement operator()(Block const& _block);
+	void enterScopeInternal(solidity::assembly::Scope& _scope);
+	void leaveScopeInternal(solidity::assembly::Scope& _scope);
 
-private:
-	class TemporaryScope;
-
-	template <typename T>
-	std::vector<T> translateVector(std::vector<T> const& _values);
-
-	template <typename T>
-	std::shared_ptr<T> translate(std::shared_ptr<T> const& _v) { return _v ? std::make_shared<T>(translate(*_v)) : nullptr; }
-	Statement translate(Statement const& _statement);
-	Block translate(Block const& _block);
-	Case translate(Case const& _case);
-	Identifier translate(Identifier const& _identifier);
-	Literal translate(Literal const& _literal);
-	TypedName translate(TypedName const& _typedName);
-	std::string translateIdentifier(std::string const& _name);
-
-	Block const& m_block;
 	solidity::assembly::AsmAnalysisInfo const& m_info;
 
-	solidity::assembly::Scope* m_scope = nullptr;
+	std::vector<solidity::assembly::Scope*> m_scopes;
 	std::map<void const*, std::string> m_translations;
 	std::set<std::string> m_usedNames;
 };
-
-template <typename T>
-std::vector<T> Disambiguator::translateVector(std::vector<T> const& _values)
-{
-	std::vector<T> translated;
-	for (auto const& v: _values)
-		translated.emplace_back(translate(v));
-	return translated;
-}
-
 
 }
 }
